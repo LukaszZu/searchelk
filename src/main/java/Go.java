@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -86,8 +87,12 @@ public class Go {
         SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client, SearchAction.INSTANCE);
 
         QueryBuilder qb = QueryBuilders.wrapperQuery(q1);
-
-        QueryStringQueryBuilder filter = QueryBuilders.queryStringQuery("lastname:abbott");
+        BoolQueryBuilder must = QueryBuilders.boolQuery().must(qb).must(QueryBuilders.matchQuery("lastname", "abbott").operator(Operator.AND))
+                .must(QueryBuilders.queryStringQuery("*"));
+//                .add(qb);
+        ConstantScoreQueryBuilder cqb = QueryBuilders.constantScoreQuery(must);
+//        QueryStringQueryBuilder filter = QueryBuilders.queryStringQuery("lastname:abbott");
+        boolean filterq = QueryBuilders.boolQuery().must().add(QueryBuilders.termQuery("lastname", "abbott"));
 //        System.out.println(filter);
 //        QueryBuilders.matchQuery(qb).operator(Operator.OR).fuzziness(Fuzziness.TWO);
 //        AggregationBuilders.filters("aaa",AggregationBuilders.filter("gender",QueryBuilders.q))
@@ -96,9 +101,11 @@ public class Go {
 //        );
 //        SearchRequestBuilder pivot3q = searchRequestBuilder.setQuery(filter).addAggregation(field).setIndices("bank");
 //        System.out.println(pivot3q);
-
+        System.out.println(qb);
+        System.out.println(cqb);
+        System.out.println(must);
 //        SearchResponse pivot3 = pivot3q.execute().actionGet();
-        SearchResponse pivot3 = client.prepareSearch("pivot3").setQuery(qb).execute().actionGet();
+        SearchResponse pivot3 = client.prepareSearch("pivot3").setQuery(cqb).execute().actionGet();
         System.out.println("DDDDDDDDDDDDDd---");
         Stream.of(pivot3.getHits().hits()).forEach(h -> System.out.println(h.getSourceAsString()));
 
@@ -120,7 +127,7 @@ public class Go {
                 .addIndex("pivot3");
 
 
-        searchBuilder.setParameter("a","b");
+//        searchBuilder.setParameter("a","b");
         System.out.println(searchBuilder.build());
         SearchResult response = client.execute(searchBuilder.build());
 
